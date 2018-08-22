@@ -12,7 +12,6 @@ import youtube_dl
 def setup(bot):
     bot.add_cog(Music(bot))
 
-
 def duration_to_str(duration):
     # Extract minutes, hours and days
     minutes, seconds = divmod(duration, 60)
@@ -28,10 +27,8 @@ def duration_to_str(duration):
 
     return ', '.join(duration)
 
-
 class MusicError(commands.UserInputError):
     pass
-
 
 class Song(discord.PCMVolumeTransformer):
     def __init__(self, song_info):
@@ -40,7 +37,6 @@ class Song(discord.PCMVolumeTransformer):
         self.channel = song_info.channel
         self.filename = song_info.filename
         super().__init__(discord.FFmpegPCMAudio(self.filename, before_options='-nostdin', options='-vn'))
-
 
 class SongInfo:
     ytdl_opts = {
@@ -182,7 +178,6 @@ class Playlist(asyncio.Queue):
             info_len += l
         return info
 
-
 class GuildMusicState:
     def __init__(self, loop):
         self.playlist = Playlist(maxsize=50)
@@ -231,7 +226,6 @@ class GuildMusicState:
             source.volume = self.player_volume
             self.voice_client.play(source, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next_song(next_song_info, e), self.loop).result())
             await next_song_info.channel.send(f'Now playing {next_song_info}')
-
 
 class Music:
     def __init__(self, bot):

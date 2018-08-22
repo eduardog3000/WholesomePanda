@@ -5,7 +5,8 @@
 
 # Development files and folders
 .idea/
+.vscode/
 
 # Project files and folders
-conf.json
+config.py
 panda.log

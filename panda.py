@@ -2,6 +2,8 @@ import json
 import logging
 import discord.ext.commands as commands
 
+import config
+
 # Setup logging
 rlog = logging.getLogger()
 rlog.setLevel(logging.INFO)
@@ -9,12 +11,8 @@ handler = logging.FileHandler('panda.log', encoding='utf-8')
 handler.setFormatter(logging.Formatter('{asctime}:{levelname}:{name}:{message}', style='{'))
 rlog.addHandler(handler)
 
-# Get the token
-with open('conf.json') as fp:
-    conf = json.load(fp)
-
 # Complicated bot creation
-bot = commands.Bot(commands.when_mentioned_or(conf['prefix']), description='Never say no to Panda.')
+bot = commands.Bot(config.prefix)
 bot.load_extension('music')
 
 # For when the bot is shitting itself
@@ -30,4 +28,4 @@ async def reload(ctx):
     await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
 # Let's rock ! (and roll, because panda are round and fluffy)
-bot.run(conf['token'])
+bot.run(config.token)
