@@ -4,6 +4,16 @@ chcp 65001 > NUL
 
 set PIPENV_VENV_IN_PROJECT=1
 
+set PATH=%PATH%;.\bin
+
+ffmpeg -version > NUL 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo Cannot find ffmpeg executable, make sure it is installed and added to your PATH.
+    echo You can also provide it in a folder named bin.
+    pause
+    exit /B 0
+)
+
 git --version > NUL 2>&1
 if %ERRORLEVEL% neq 0 (
     echo Cannot find Git executable, make sure it is installed and added to your PATH.

@@ -2,11 +2,15 @@
 *.pyc
 *.lock
 .venv/
+bin/
 
 # Development files and folders
 .idea/
 .vscode/
+.vs/
 
 # Project files and folders
 config.py
 panda.log
+music/
+panda.db

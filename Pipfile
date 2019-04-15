@@ -8,7 +8,8 @@ name = "pypi"
 [packages]
 
 pynacl = "*"
-"discord.py" = {git = "https://github.com/PapyrusThePlant/discord.py.git", ref = "rewrite", extras = ["voice"]}
+"discord.py" = { extras = ['voice'] }
+yarl = "<1.2"
 youtube-dl = "*"
 
 
