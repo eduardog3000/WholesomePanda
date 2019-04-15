@@ -40,3 +40,14 @@ reactions = {
     r'\bturtles?\b': '🐢',
     r'\bpizzas?\b': '🍕'
 }
+
+db = {
+    'logging': {
+        'excluded': [123456789012345678],
+        'quote': True
+    },
+    'songs': True,
+    'warnings': {
+        'log_channel': 123456789012345678
+    }
+}

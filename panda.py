@@ -15,7 +15,7 @@ rlog.addHandler(handler)
 
 # Complicated bot creation
 bot = commands.Bot(config.prefix)
-bot.load_extension('music')
+# bot.load_extension('music')
 bot.load_extension('chatbot')
 
 # For when the bot is shitting itself
@@ -26,9 +26,9 @@ async def reload(ctx):
 
 	This command requires the Manage Server permission.
 	"""
-	ctx.bot.unload_extension('music')
+	# ctx.bot.unload_extension('music')
 	ctx.bot.unload_extension('chatbot')
-	ctx.bot.load_extension('music')
+	# ctx.bot.load_extension('music')
 	ctx.bot.load_extension('chatbot')
 	await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
 
@@ -45,10 +45,10 @@ async def restart(ctx):
 async def shutdown(ctx):
 	await ctx.bot.close()
 
-@bot.listen()
-async def on_command_error(ctx, e):
-	await ctx.message.add_reaction('\N{CROSS MARK}')
-	await ctx.send(e)
+# @bot.listen()
+# async def on_command_error(ctx, e):
+# 	await ctx.message.add_reaction('\N{CROSS MARK}')
+# 	await ctx.send(e)
 
 # Let's rock ! (and roll, because panda are round and fluffy)
 bot.run(config.token)
