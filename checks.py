@@ -9,7 +9,7 @@ def config(config_prop):
 
 def quote_enabled():
     def predicate(ctx):
-        return config.db['logging'] and config.db['logging']['quote']
+        return cfg.db['logging'] and cfg.db['logging']['quote']
     return commands.check(predicate)
     
 def in_bound_channel():

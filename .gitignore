@@ -14,4 +14,4 @@ bin/
 config.py
 panda.log
 music/
-panda.db
+panda.db*

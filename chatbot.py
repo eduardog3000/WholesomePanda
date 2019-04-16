@@ -21,22 +21,22 @@ class ChatBot(commands.Cog):
 			if not os.path.isfile('panda.db') and os.path.isfile('panda.example.db'):
 				import shutil
 				shutil.copy2('panda.example.db', 'panda.db')
-			
-			conn = sqlite3.connect('panda.db', detect_types=sqlite3.PARSE_DECLTYPES)
-			cur = conn.cursor()
 
-			if not os.path.isfile('panda.db'):
-				cur = conn.cursor()
-				cur.execute('''CREATE TABLE logs 
-					(id INT PRIMARY KEY, guild INT, channel INT, author INT, timestamp TIMESTAMP, message TEXT, is_edited BOOLEAN DEFAULT 0)''')
-				cur.execute('''CREATE TABLE warnings
-					(id INT PRIMARY KEY AUTOINCREMENT, warned INT, mod INT, reason TEXT, timestamp TIMESTAMP)''')
-				cur.execute('''CREATE TABLE songs
+			dbexists = os.path.isfile('panda.db')
+
+			self.conn = sqlite3.connect('panda.db', detect_types=sqlite3.PARSE_DECLTYPES)
+			self.cur = self.conn.cursor()
+
+			if not dbexists:
+				self.conn = sqlite3.connect('panda.db', detect_types=sqlite3.PARSE_DECLTYPES)
+				self.cur = self.conn.cursor()
+				self.cur.execute('''CREATE TABLE logs 
+					(id INTEGER PRIMARY KEY, guild INT, channel INT, author INT, timestamp TIMESTAMP, message TEXT, is_edited BOOLEAN DEFAULT 0)''')
+				self.cur.execute('''CREATE TABLE warnings
+					(id INTEGER PRIMARY KEY AUTOINCREMENT, warned INT, mod INT, reason TEXT, timestamp TIMESTAMP)''')
+				self.cur.execute('''CREATE TABLE songs
 					(filename TEXT PRIMARY KEY, url TEXT, ytid TEXT, title TEXT, plays INT DEFAULT 0''')
-				conn.commit()
-			
-			self.conn = conn
-			self.cur = cur
+				self.conn.commit()
 		else:
 			config.db = {'logging': False, 'songs': False, 'warnings': False}
 	
@@ -66,6 +66,7 @@ class ChatBot(commands.Cog):
 	@checks.config(config.colors)
 	async def color_clear(self, ctx):
 		"""Removes any color role you have."""
+		await ctx.trigger_typing()
 		color_roles = [r for r in ctx.guild.roles if r.name in config.colors]
 		await ctx.author.remove_roles(*color_roles, reason='User requested colors cleared.')
 		emoji = ':black_heart: ' if config.emoji else ''
@@ -83,12 +84,11 @@ class ChatBot(commands.Cog):
 	@commands.command()
 	async def hug(self, ctx, author, to_hug):
 		"""Hug someone, it's nice."""
-		await ctx.trigger_typing()
 		await ctx.send(f':hugging: | {author} hugged {to_hug} with all the love :heart:')
 	
 	@commands.group(aliases=['w', 'warns'], invoke_without_command=True)
-	@commands.has_permissions()
 	@checks.config(config.db['warnings'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	async def warn(self, ctx, author, user: discord.User, *, reason):
 		"""Warns the mentioned user with the given reason."""
 		self.cur.execute('INSERT INTO warnings (?,?,?,?)', (user.id, author.id, reason, ctx.message.created_at))
@@ -101,6 +101,8 @@ class ChatBot(commands.Cog):
 		await self.bot.get_channel(config.db['warnings']['log_channel']).send(embed=embed)
 	
 	@warn.command(name='show', aliases=['s', 'ing', 'ings'])
+	@checks.config(config.db['warnings'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	async def warn_show(self, ctx, user_or_warning_id: typing.Union[discord.User, int]):
 		"""Shows all warnings the mentioned user has.
 		Or shows the full info for a warning given its id."""
@@ -140,24 +142,38 @@ class ChatBot(commands.Cog):
 		await ctx.send(embed=embed)
 	
 	@commands.command(name='warnings', aliases=['ws', 'warning', 'wing', 'wings'], hidden=True)
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
+	@checks.config(config.db['warnings'])
 	async def warn_show_short(self, ctx, user_or_warning_id: typing.Union[discord.User, int]):
 		await ctx.invoke(self.warn_show, user_or_warning_id)
 	
 	@warn.command(name='remove', aliases=['r'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
+	@checks.config(config.db['warnings'])
 	async def warn_remove(self, ctx, warning_id: int):
 		"""Removes a warning by its id."""
-		pass
+		self.cur.execute('DELETE FROM warnings WHERE id = ?', warning_id)
+		self.conn.commit()
+		await ctx.send('***Warning removed.***')
 	
 	@commands.command(name='wr', hidden=True)
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
+	@checks.config(config.db['warnings'])
 	async def warn_remove_short(self, ctx, warning_id: int):
 		await ctx.invoke(self.warn_remove, warning_id)
 	
 	@warn.command(name='clear', aliases=['c'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
+	@checks.config(config.db['warnings'])
 	async def warn_clear(self, ctx, user: discord.User):
 		"""Removes all warnings from the mentioned user."""
-		pass
+		self.cur.execute('DELETE FROM warnings WHERE warned = ?', user.id)
+		self.conn.commit()
+		await ctx.send(f'***Warnings cleared for {user.mention}.***')
 
 	@commands.command(name='wc', hidden=True)
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
+	@checks.config(config.db['warnings'])
 	async def warn_clear_short(self, ctx, user: discord.User):
 		await ctx.invoke(self.warn_clear, user)
 
@@ -165,20 +181,20 @@ class ChatBot(commands.Cog):
 	@checks.in_bound_channel()
 	async def noimp(self, ctx):
 		await ctx.send('Commands not yet implemented:\n`quote` and `warn [show|remove|clear]`')
-	
-	@commands.Cog.listener()
-	async def on_message(self, message):
-		if config.db['logging'] and message.channel not in config.db['logging']['excluded']:
-			self.cur.execute('''INSERT INTO logs VALUES (?,?,?,?,?,?)''',
-				(message.id, message.guild.id, message.channel.id, message.author.id, message.created_at))
 
-		if message.author is self.bot.user:
-			return
-		
-		if self.has_permission(message, 'add_reactions'):
-			for key in config.reactions:
-				if re.match(key, message.content):
-					await self.add_reaction(message, config.reactions[key])
+	@commands.Cog.listener(name='on_message')
+	async def log_message(self, message):
+		if config.db['logging'] and message.channel not in config.db['logging']['excluded']:
+			self.cur.execute('''INSERT INTO logs VALUES (?,?,?,?,?,?,0)''',
+				(message.id, message.guild.id, message.channel.id, message.author.id, message.created_at, message.content))
+			self.conn.commit()
+	
+	@commands.Cog.listener(name='on_message')
+	@commands.bot_has_permissions(add_reactions=True)
+	async def keyword_react(self, message):
+		for key in config.reactions:
+			if re.match(key, message.content, re.IGNORECASE):
+				await self.add_reaction(message, config.reactions[key])
 
 	async def respond(self, ctx, message='', reactions=[]):
 		if config.msg_response:
