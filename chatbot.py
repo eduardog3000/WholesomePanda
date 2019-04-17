@@ -1,4 +1,5 @@
 import inspect
+import operator
 import os
 import re
 import sqlite3
@@ -142,14 +143,14 @@ class ChatBot(commands.Cog):
 		await ctx.send(embed=embed)
 	
 	@commands.command(name='warnings', aliases=['ws', 'warning', 'wing', 'wings'], hidden=True)
-	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	@checks.config(config.db['warnings'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	async def warn_show_short(self, ctx, user_or_warning_id: typing.Union[discord.User, int]):
 		await ctx.invoke(self.warn_show, user_or_warning_id)
 	
 	@warn.command(name='remove', aliases=['r'])
-	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	@checks.config(config.db['warnings'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	async def warn_remove(self, ctx, warning_id: int):
 		"""Removes a warning by its id."""
 		self.cur.execute('DELETE FROM warnings WHERE id = ?', warning_id)
@@ -157,14 +158,14 @@ class ChatBot(commands.Cog):
 		await ctx.send('***Warning removed.***')
 	
 	@commands.command(name='wr', hidden=True)
-	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	@checks.config(config.db['warnings'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	async def warn_remove_short(self, ctx, warning_id: int):
 		await ctx.invoke(self.warn_remove, warning_id)
 	
 	@warn.command(name='clear', aliases=['c'])
-	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	@checks.config(config.db['warnings'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	async def warn_clear(self, ctx, user: discord.User):
 		"""Removes all warnings from the mentioned user."""
 		self.cur.execute('DELETE FROM warnings WHERE warned = ?', user.id)
@@ -172,8 +173,8 @@ class ChatBot(commands.Cog):
 		await ctx.send(f'***Warnings cleared for {user.mention}.***')
 
 	@commands.command(name='wc', hidden=True)
-	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	@checks.config(config.db['warnings'])
+	@commands.has_any_role(config.db['warnings']['mod_roles'])
 	async def warn_clear_short(self, ctx, user: discord.User):
 		await ctx.invoke(self.warn_clear, user)
 
@@ -183,14 +184,16 @@ class ChatBot(commands.Cog):
 		await ctx.send('Commands not yet implemented:\n`quote` and `warn [show|remove|clear]`')
 
 	@commands.Cog.listener(name='on_message')
+	@checks.config(config.db['logging'])
+	@checks.not_in_channel(config.db['logging']['excluded'])
 	async def log_message(self, message):
-		if config.db['logging'] and message.channel not in config.db['logging']['excluded']:
-			self.cur.execute('''INSERT INTO logs VALUES (?,?,?,?,?,?,0)''',
-				(message.id, message.guild.id, message.channel.id, message.author.id, message.created_at, message.content))
-			self.conn.commit()
+		self.cur.execute('''INSERT INTO logs VALUES (?,?,?,?,?,?,0)''',
+			(message.id, message.guild.id, message.channel.id, message.author.id, message.created_at, message.content))
+		self.conn.commit()
 	
 	@commands.Cog.listener(name='on_message')
 	@commands.bot_has_permissions(add_reactions=True)
+	@checks.not_in_channel(config.dont_react_in)
 	async def keyword_react(self, message):
 		for key in config.reactions:
 			if re.match(key, message.content, re.IGNORECASE):

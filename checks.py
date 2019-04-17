@@ -16,3 +16,8 @@ def in_bound_channel():
     def predicate(ctx):
         return ctx.channel.id in cfg.bound_channels
     return commands.check(predicate)
+
+def not_in_channel(*channels):
+    def predicate(ctx):
+        return ctx.channel.id not in channels
+    return commands.check(predicate)
