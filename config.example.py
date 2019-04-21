@@ -5,10 +5,19 @@ token = 'TOKEN'
 prefix = '!'
 
 # List of channel ids as int. Most commands will only work in these channels.
+# See <bindings> and <global_bindings> below for overrides.
 bound_channels = [123456789012345678, 987654321098765432]
 
-# Whether the bot should respond to commands with a message (True) or just reactions (False)
+# A list of roles able to use mod level bot commands.
+# Can be the roles' exact names as strings or their ids as ints.
+# Mods for the warn command can be defined separately below.
+mod_roles = ['Mod', 123456789012345678]
+
+# Whether the bot should respond to commands with a message. Default: True
 msg_response = True
+# Whether the bot should respond to commands with a reaction. Default: False
+reaction_response = False
+# Both can be true, the bot will respond with both.
 
 """
 Colors for color change command.
@@ -41,13 +50,46 @@ reactions = {
     r'\bpizzas?\b': '🍕'
 }
 
+"""
+Database
+<db> is either a dict with properties for the logging, songs, and warnings modules,
+    or False to disable all features that need a database.
+"""
 db = {
+    # Config for message logging.
+    # Either a dict with more properties, or False to disable logging.
     'logging': {
+        # A channel or list of channels where messages shouldn't be logged.
         'excluded': [123456789012345678],
+        # Whether the quote command should be enabled, which randomly quotes logged messages.
         'quote': True
     },
+    # Whether song plays should be logged.
     'songs': True,
+    # Config for warning system.
+    # Either a dict with more properties, or False to disable warnings.
     'warnings': {
-        'log_channel': 123456789012345678
+        # The channel warnings should be logged to.
+        'log_channel': 123456789012345678,
+        # A list of the roles that can warn
+        # Can be the exact names of the roles as strings or their ids as ints.
+        # 'mod_roles': mod_roles makes warn mods the exact same as bot mods.
+        'mod_roles': mod_roles
     }
 }
+
+# Overrides to allow to disallow specific commands by channel.
+# Should be an object whose properties are of this form:
+# 'commandname_string': {
+#    channel_int: True if enabled, False if disabled
+# }
+bindings = {
+    'quote': {
+        123456789012345678: True,
+        987654321234567890: False
+    }
+}
+# Commands that will work in every channel regardless of other settings.
+# Overrides both the <bound_channels> and <bindings> settings for the listed commands.
+# Should be a list of strings with the exact (primary) name of the commands.
+global_bindings = ['hug', 'warn', 'warnings', 'wr', 'wc']

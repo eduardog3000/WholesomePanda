@@ -32,18 +32,24 @@ async def reload(ctx):
 	# ctx.bot.load_extension('music')
 	ctx.bot.load_extension('chatbot')
 	await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+	print('Reloaded')
 
 # For when the bot is really shitting itself
 @bot.command()
 @commands.has_permissions(manage_guild=True)
 async def restart(ctx):
+	"""Restarts the bot completely."""
 	await ctx.bot.close()
 	await ctx.bot.run(config.token)
+	await ctx.message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+	print('Restarted.')
 
 # For when the bot is REALLY shitting itself
 @bot.command()
 @commands.has_permissions(manage_guild=True)
 async def shutdown(ctx):
+	"""Shuts down the bot, must be manually restarted."""
+	print('Shutting down.')
 	await ctx.bot.close()
 
 # @bot.listen()
